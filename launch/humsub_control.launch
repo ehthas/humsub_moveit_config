@@ -1,0 +1,41 @@
+<launch>
+
+  <!-- Debug mode -->
+<!--  <arg name="debug" default="false" />  -->
+
+  <!-- Launch Gazebo -->
+<!--    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="worlds/empty.world"/>
+        <arg name="paused" value="false"/>
+        <arg name="use_sim_time" value="true"/>
+        <arg name="gui" value="true"/>
+        <arg name="debug" value="$(arg debug)"/>
+    </include>
+-->
+
+  <!-- Send robot urdf to param server  -->
+  <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find humsub_proj)/urdf/human_urdf.xacro'"/>
+
+       <arg name="x" default="0"/>
+       <arg name="y" default="0"/>
+       <arg name="z" default="0"/>
+
+  <!-- push robot description to factory and spawn robot in gazebo at origin, change x,y,z args to spawn at a diff position -->
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" 
+        args="-urdf -param robot_description -model mhuman -x $(arg x) -y $(arg y) -z $(arg z)"/>
+
+  <!-- Load joint controller configs from yaml file to param server  -->
+  <rosparam command="load" file="$(find humsub_proj)/config/traj_control.yaml" ns="/mhuman"/>
+<!--  <rosparam file="$(find humsub_proj)/config/gazebo_ros_control_params.yaml" command="load"/>   -->  
+
+  <!-- Load controllers -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" ns="/mhuman" 
+        args="--=namespace=/mhuman
+        joint_state_controller
+        arm_controller
+        gripper_controller
+        --timeout 60">
+  </node>
+
+</launch>
+
